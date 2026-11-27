@@ -33,13 +33,8 @@ claude-sessions iterm [claude]   # resume the conversations under the current di
                                  # with the given command (default claude)
 ```
 
-Install it once per user, from the installed plugin (it keeps working after plugin updates):
-
-```bash
-bash "$(jq -r '.plugins["tasks@agilogy-claude-skills"][0].installPath' ~/.claude/plugins/installed_plugins.json)/bin/install-claude-sessions" [<dir>]
-```
-
-`<dir>` defaults to `~/.local/bin`, which must be on your `PATH`. Needs macOS, `zsh`, `jq` and `git`;
+Install it once per user with `/tasks:install-claude-sessions [<dir>]` in a Claude Code session (it keeps
+working after plugin updates). `<dir>` defaults to `~/.local/bin`, which must be on your `PATH`. Needs macOS, `zsh`, `jq` and `git`;
 `iterm` needs iTerm2. With `gtimeout` (GNU coreutils), each `git fetch` gives up after 20 s.
 
 ## Layout
