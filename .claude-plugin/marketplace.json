@@ -1,0 +1,14 @@
+{
+  "name": "agilogy-claude-skills",
+  "description": "Jordi Pradel's Claude Code skills, hooks and agents",
+  "owner": {
+    "name": "Jordi Pradel"
+  },
+  "plugins": [
+    {
+      "name": "tasks",
+      "source": "./plugins/tasks",
+      "description": "Per-session pending list with a side panel (/tasks) and closing and archiving conversations (/session)"
+    }
+  ]
+}
