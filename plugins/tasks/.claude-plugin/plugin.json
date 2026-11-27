@@ -1,9 +1,10 @@
 {
   "name": "tasks",
-  "version": "0.4.4",
+  "version": "0.4.5",
   "description": "Per-session pending list with a side panel (/tasks:tasks-show), closing and archiving conversations (/session), and claude-sessions to list and resume conversations from the terminal",
   "author": { "name": "Agilogy" },
   "license": "MIT",
+  "homepage": "https://github.com/agilogy/claude-agilogy-marketplace/tree/main/plugins/tasks",
   "types": "./types/index.d.ts",
   "hooks": "./hooks/lifecycle.json"
 }
