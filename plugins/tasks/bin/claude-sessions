@@ -1,0 +1,321 @@
+#!/bin/zsh
+# claude-sessions iterm [<launcher>] | l [-v] | lg [-v] — the open Claude conversations.
+# Conversations closed with `/session close` (queued for archiving) are skipped; archived ones are no
+# longer in projects/. So are transcripts with no messages (../skills/session/prompted.jq).
+# iterm: open a new iTerm2 tab per conversation whose first cwd is the current directory or below it,
+# resuming it with <launcher> (default claude); running ones are skipped. Each tab is named after the
+# conversation's name, else after its directory. Most recently used first.
+# l (list): a table of the conversations whose last cwd is the current directory or below it, running ones
+# included, one row per conversation: the git worktree holding that cwd ("main" for the main one; the
+# nearest existing directory counts when the cwd is gone), its branch, the conversation (💻 running, 😴 not;
+# its name, else its id, and its automatic title), the date of its last interaction and the worktree's git
+# state (git-state.sh, after a `git fetch`). The worktrees with no conversation get a
+# row too. Rows follow `git worktree list`, each worktree's conversations most recently used first. One
+# table per repository, then one for the conversations outside git, by directory. The tables are headed
+# when there are several or one lies in a subdirectory: a repository by its relative path and, in
+# parentheses, its absolute one. When a fetch fails, a last line tells how old that repository's state is.
+# lg (list-global): like l, but all conversations wherever they are, with absolute paths.
+# -v (--verbose), with l or lg: below each conversation, the unticked items of its pending list.
+#
+# Reads the conversations from ~/.claude (projects, sessions, pending, archive-queue). macOS only.
+# install-claude-sessions puts it on PATH.
+emulate -L zsh
+set -u
+
+state=$HOME/.claude
+git_state=${0:A:h}/git-state.sh
+prompted=${0:A:h:h}/skills/session/prompted.jq
+launcher=claude
+root=${PWD:A}
+dry_run=false
+global=false
+verbose=false
+usage() { print -r -- "Usage: claude-sessions iterm [<launcher>] | l [-v] | lg [-v]" >&2; exit 2 }
+case ${1:-} in
+  iterm)
+    (( $# <= 2 )) || usage
+    launcher=${2:-claude}
+    (( $+commands[$launcher] )) || { print -r -- "$launcher: command not found" >&2; exit 2 }
+    set --
+    ;;
+  l|list) dry_run=true; shift ;;
+  lg|list-global) dry_run=true global=true; shift ;;
+  *) usage ;;
+esac
+for arg; do
+  case $arg in
+    -v|--verbose) $dry_run || usage; verbose=true ;;
+    *) usage ;;
+  esac
+done
+
+typeset -A skip
+for f in $state/sessions/*.json(N); do
+  pid=$(jq -r '.pid // empty' $f) id=$(jq -r '.sessionId // empty' $f)
+  [[ -n $pid && -n $id ]] && ps -p $pid >/dev/null && skip[$id]=running
+done
+for f in $state/archive-queue/*(N.); do skip[${f:t}]=closed; done
+
+# The conversations to consider and each one's cwd: the first one to resume it, the last one to list it
+found=()
+typeset -A candidate_cwd
+for transcript in $state/projects/*/*.jsonl(N.); do
+  case ${skip[${transcript:t:r}]:-} in
+    closed) continue ;;
+    running) $dry_run || continue ;;
+  esac
+  if $dry_run; then
+    cwd=$(tail -r $transcript | grep -m1 -o '"cwd":"[^"]*"' | head -1 | cut -d'"' -f4)
+  else
+    cwd=$(grep -m1 -o '"cwd":"[^"]*"' $transcript | cut -d'"' -f4)
+  fi
+  [[ -n $cwd ]] || continue
+  $global || [[ $cwd == $root || $cwd == $root/* ]] || continue
+  found+=($transcript)
+  candidate_cwd[$transcript]=$cwd
+done
+
+# By directory: the worktree holding it and its repository (the git directory its worktrees share), both
+# empty outside git. A directory that is gone counts as the nearest one still there.
+typeset -A dir_worktree dir_repo
+locate() {
+  local dir=$1 out
+  (( ${+dir_worktree[$1]} )) && return
+  dir_worktree[$1]= dir_repo[$1]=
+  while [[ ! -d $dir ]]; do dir=${dir:h}; done
+  out=$(git -C $dir rev-parse --show-toplevel --path-format=absolute --git-common-dir 2>/dev/null) || return 0
+  dir_worktree[$1]=${${(f)out}[1]:A} dir_repo[$1]=${${(f)out}[2]:A}
+}
+
+# By repository: its main worktree and all the ones still on disk, the main one first. By worktree: its
+# branch, empty if detached.
+typeset -A repo_main repo_worktrees worktree_branch
+load_repo() {
+  local repo=$1 line worktree= worktrees=()
+  (( ${+repo_worktrees[$repo]} )) && return
+  for line in ${(f)"$(git -C $2 worktree list --porcelain)"}; do
+    case $line in
+      worktree\ *) worktree=${${line#worktree }:A}; [[ -d $worktree ]] && worktrees+=($worktree) ;;
+      branch\ refs/heads/*) worktree_branch[$worktree]=${line#branch refs/heads/} ;;
+    esac
+  done
+  repo_main[$repo]=${worktrees[1]} repo_worktrees[$repo]=${(pj:\n:)worktrees}
+}
+
+# l and lg fetch every repository with a remote, all at once and while the conversations are read; the
+# ones that could not be fetched are told at the end
+typeset -A fetching
+if $dry_run; then
+  for transcript in $found; do
+    cwd=${candidate_cwd[$transcript]}
+    locate $cwd
+    [[ -n ${dir_repo[$cwd]} ]] && load_repo ${dir_repo[$cwd]} ${dir_worktree[$cwd]}
+  done
+  if ! $global; then
+    locate $root
+    [[ -n ${dir_repo[$root]} ]] && load_repo ${dir_repo[$root]} ${dir_worktree[$root]}
+  fi
+  fetch=(git)
+  (( $+commands[gtimeout] )) && fetch=(gtimeout 20 git)
+  for repo in ${(k)repo_worktrees}; do
+    main=${repo_main[$repo]}
+    git -C $main remote get-url origin &>/dev/null || continue
+    GIT_TERMINAL_PROMPT=0 $fetch -C $main fetch -q origin --prune &>/dev/null &
+    pid=$!
+    fetching[$repo]=$pid
+  done
+fi
+
+# Candidates as "<epoch of the last interaction> <transcript>"
+candidates=()
+for transcript in $found; do
+  jq -en -f $prompted $transcript >/dev/null || continue
+  # Timestamps are UTC ISO-8601
+  ts=$(tail -r $transcript | grep -m1 -E '"type":"(user|assistant)"' | jq -r '.timestamp // empty')
+  epoch=$(TZ=UTC date -j -f %Y-%m-%dT%H:%M:%S ${ts%%.*} +%s)
+  candidates+=("$epoch $transcript")
+done
+
+# Most recent first
+ordered=(${(On)candidates})
+
+# The last name given to a conversation (/rename or session name) and its last automatic title, each
+# empty if none
+name_and_title() {
+  local titles=$(grep -E '"type":"(custom-title|agent-name|ai-title)"' $1)
+  name=$(jq -rs 'map(.customTitle // .agentName // empty) | last // ""' <<<$titles)
+  title=$(jq -rs 'map(.aiTitle // empty) | last // ""' <<<$titles)
+}
+
+if ! $dry_run; then
+  for candidate in $ordered; do
+    transcript=${candidate#* }
+    cwd=${candidate_cwd[$transcript]}
+    name_and_title $transcript
+    # Tab named after the conversation's name, else after its directory
+    osascript - $cwd $launcher ${transcript:t:r} ${name:-${cwd:t}} <<'EOF'
+on run argv
+  tell application "iTerm2"
+    tell current window
+      set newTab to (create tab with default profile)
+      tell current session of newTab
+        set name to (item 4 of argv)
+        write text "cd " & quoted form of (item 1 of argv) & " && " & (item 2 of argv) & " -r " & (item 3 of argv)
+      end tell
+    end tell
+  end tell
+end run
+EOF
+  done
+  exit
+fi
+
+# The repositories to list: the ones with a conversation and, with l, the current directory's
+typeset -A transcript_worktree transcript_repo listed
+for candidate in $ordered; do
+  transcript=${candidate#* }
+  cwd=${candidate_cwd[$transcript]}
+  transcript_worktree[$transcript]=${dir_worktree[$cwd]} transcript_repo[$transcript]=${dir_repo[$cwd]}
+  [[ -n ${dir_repo[$cwd]} ]] && listed[${dir_repo[$cwd]}]=1
+done
+$global || [[ -z ${dir_repo[$root]} ]] || listed[${dir_repo[$root]}]=1
+
+unfetched=()
+for repo in ${(ko)fetching}; do wait ${fetching[$repo]} || unfetched+=($repo); done
+repos=(${(k)listed})
+unfetched=(${unfetched:*repos})
+
+# A path as the table shows it: absolute with lg, else relative to the current directory when below it
+shown() {
+  if $global || [[ $1 != $root && $1 != $root/* ]]; then REPLY=$1
+  elif [[ $1 == $root ]]; then REPLY=.
+  else REPLY=${1#$root/}; fi
+}
+
+# Rows as "<worktree>␟<branch>␟<icon>␟<name or id>␟<title>␟<last interaction>␟<state>␟<id>", a conversation's
+# fields empty in the row of a worktree with none; a table's heading as "␟<heading>␟<absolute path>", the
+# path empty outside git
+sep=$'\x1f'
+rows=()
+conversation_row() {
+  local epoch=${1%% *} transcript=${1#* } name title icon=😴
+  local id=${transcript:t:r}
+  name_and_title $transcript
+  [[ ${skip[$id]:-} == running ]] && icon=💻
+  rows+=("$2$sep$3$sep$icon$sep${name:-$id}$sep$title$sep$(date -r $epoch '+%Y-%m-%d %H:%M')$sep$4$sep$id")
+}
+
+tables=0
+# Whether a table lies in a subdirectory of the current one
+nested=false
+by_main=()
+for repo in ${(k)listed}; do by_main+=("${repo_main[$repo]}$sep$repo"); done
+for entry in ${(o)by_main}; do
+  main=${entry%%$sep*} repo=${entry#*$sep}
+  repo_rows=()
+  for worktree in ${(f)repo_worktrees[$repo]}; do
+    branch=${worktree_branch[$worktree]:-}
+    if [[ $worktree == $main ]]; then label=main
+    elif [[ $worktree == $main/* ]]; then label=${${worktree#$main/}#.claude/worktrees/}
+    else label=$worktree; fi
+    # A detached worktree has no branch to tell the state of
+    git_status=
+    [[ -n $branch ]] && git_status=$(cd $worktree && $git_state $branch $worktree 2>/dev/null)
+    before=${#rows}
+    for candidate in $ordered; do
+      [[ ${transcript_worktree[${candidate#* }]} == $worktree ]] &&
+        conversation_row $candidate $label "$branch" "$git_status"
+    done
+    if (( ${#rows} == before )) && { $global || [[ $worktree == $root || $worktree == $root/* ]] }; then
+      rows+=("$label$sep$branch$sep$sep$sep$sep$sep$git_status$sep")
+    fi
+    repo_rows+=(${rows[before+1,-1]})
+    rows=(${rows[1,before]})
+  done
+  (( ${#repo_rows} )) || continue
+  shown $main
+  rows+=("$sep$REPLY$sep$main" $repo_rows)
+  (( tables++ ))
+  [[ $main == $root/* ]] && nested=true
+done
+
+# The conversations outside git, by directory
+outside=()
+for candidate in $ordered; do
+  [[ -z ${transcript_repo[${candidate#* }]} ]] && outside+=(${candidate_cwd[${candidate#* }]})
+done
+if (( ${#outside} )); then
+  rows+=("$sep(no git)")
+  (( tables++ ))
+  for dir in ${(ou)outside}; do
+    [[ $dir == $root/* ]] && nested=true
+    shown $dir
+    for candidate in $ordered; do
+      [[ -z ${transcript_repo[${candidate#* }]} && ${candidate_cwd[${candidate#* }]} == $dir ]] &&
+        conversation_row $candidate $REPLY '' ''
+    done
+  done
+fi
+
+if [[ -t 1 ]]; then bold=$'\e[1m' plain=$'\e[0m'; else bold= plain=; fi
+headers=(Worktree Branch Conversation 'Last used' State)
+# Each table's column widths, as "<table>,<column>"
+typeset -A widths
+table=0
+for row in $rows; do
+  cells=("${(@ps:\x1f:)row}")
+  if [[ -z ${cells[1]} ]]; then
+    (( table++ ))
+    measured=($headers)
+  else
+    conversation=${cells[4]}${cells[5]:+ · ${cells[5]}}
+    # The icon takes two columns, whatever zsh makes of it
+    measured=(${cells[1]} "${cells[2]}" "${conversation:+   $conversation}" "${cells[6]}")
+  fi
+  for i in 1 2 3 4; do (( ${(m)#measured[i]} > ${widths[$table,$i]:-0} )) && widths[$table,$i]=${(m)#measured[i]}; done
+done
+# cell <text> <column> [<text as printed, when it differs>]: the text padded to its column's width
+cell() { local pad; printf -v pad '%*s' $(( ${widths[$table,$2]} - ${(m)#1} )) ''; line+="${3:-$1}$pad  " }
+put() { while [[ $line == *' ' ]]; do line=${line% }; done; print -r -- $line }
+
+table=0
+for row in $rows; do
+  cells=("${(@ps:\x1f:)row}")
+  if [[ -z ${cells[1]} ]]; then
+    (( table++ )) && print
+    if (( tables > 1 )) || $global || $nested; then
+      # The absolute path too when the heading's is relative, to copy it
+      absolute=${cells[3]:-}
+      [[ $absolute == ${cells[2]} ]] && absolute=
+      print -r -- "$bold${cells[2]}$plain${absolute:+ ($absolute)}"
+    fi
+    line=
+    for i in 1 2 3 4; do cell ${headers[i]} $i "$bold${headers[i]}$plain"; done
+    line+="$bold${headers[5]}$plain"
+    put
+    continue
+  fi
+  line=
+  cell "${cells[1]}" 1
+  cell "${cells[2]}" 2
+  if [[ -n ${cells[3]} ]]; then
+    rest=${cells[5]:+ · ${cells[5]}}
+    cell "   ${cells[4]}$rest" 3 "${cells[3]} $bold${cells[4]}$plain$rest"
+  else
+    cell '' 3
+  fi
+  cell "${cells[6]}" 4
+  line+=${cells[7]}
+  put
+  $verbose && [[ -n ${cells[8]:-} ]] && grep -- '^- \[ \] ' $state/pending/${cells[8]}.md 2>/dev/null | sed 's/^/   /'
+done
+
+# The state of a repository that could not be fetched is as old as its last fetch
+(( ${#unfetched} )) && print
+for repo in $unfetched; do
+  shown ${repo_main[$repo]}
+  fetches=($repo/FETCH_HEAD(N) $repo/worktrees/*/FETCH_HEAD(N))
+  if (( ${#fetches} )); then age="the state is from $(date -r $(stat -f %m $fetches | sort -n | tail -1) '+%Y-%m-%d %H:%M')"
+  else age="it was never fetched"; fi
+  print -r -- "⚠️  $REPLY: git fetch failed; $age"
+done
