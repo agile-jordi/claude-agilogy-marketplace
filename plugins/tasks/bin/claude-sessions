@@ -9,7 +9,7 @@
 # included, one row per conversation: the git worktree holding that cwd ("main" for the main one; the
 # nearest existing directory counts when the cwd is gone), its branch, the conversation (💻 running, 😴 not;
 # its name, else its id, and its automatic title), the date of its last interaction and the worktree's git
-# state (git-state.sh, after a `git fetch`). The worktrees with no conversation get a
+# state (git-state.sh, after a `git fetch`; ⏱ when it takes over 5 s). The worktrees with no conversation get a
 # row too. Rows follow `git worktree list`, each worktree's conversations most recently used first. One
 # table per repository, then one for the conversations outside git, by directory. The tables are headed
 # when there are several or one lies in a subdirectory: a repository by its relative path and, in
@@ -185,6 +185,39 @@ for repo in ${(ko)fetching}; do wait ${fetching[$repo]} || unfetched+=($repo); d
 repos=(${(k)listed})
 unfetched=(${unfetched:*repos})
 
+# The git state of every listed worktree on a branch (a detached one has none), all at once; one still running
+# after state_timeout seconds is stopped and shows ⏱
+state_timeout=5
+state_dir=$(mktemp -d)
+typeset -A state_pid state_file worktree_state
+for repo in $repos; do
+  for worktree in ${(f)repo_worktrees[$repo]}; do
+    branch=${worktree_branch[$worktree]:-}
+    [[ -n $branch ]] || continue
+    state_file[$worktree]=$state_dir/${#state_file}
+    (cd $worktree && $git_state $branch $worktree >${state_file[$worktree]} 2>/dev/null) &
+    pid=$!
+    state_pid[$worktree]=$pid
+  done
+done
+deadline=$(( SECONDS + state_timeout ))
+while (( SECONDS < deadline )); do
+  running=false
+  for pid in ${(v)state_pid}; do kill -0 $pid 2>/dev/null && running=true; done
+  $running || break
+  sleep 0.2
+done
+for worktree pid in ${(kv)state_pid}; do
+  if kill -0 $pid 2>/dev/null; then
+    pkill -P $pid 2>/dev/null
+    kill $pid 2>/dev/null
+    worktree_state[$worktree]=⏱
+  else
+    worktree_state[$worktree]=$(<${state_file[$worktree]})
+  fi
+done
+rm -rf $state_dir
+
 # A path as the table shows it: absolute with lg, else relative to the current directory when below it
 shown() {
   if $global || [[ $1 != $root && $1 != $root/* ]]; then REPLY=$1
@@ -218,9 +251,7 @@ for entry in ${(o)by_main}; do
     if [[ $worktree == $main ]]; then label=main
     elif [[ $worktree == $main/* ]]; then label=${${worktree#$main/}#.claude/worktrees/}
     else label=$worktree; fi
-    # A detached worktree has no branch to tell the state of
-    git_status=
-    [[ -n $branch ]] && git_status=$(cd $worktree && $git_state $branch $worktree 2>/dev/null)
+    git_status=${worktree_state[$worktree]:-}
     before=${#rows}
     for candidate in $ordered; do
       [[ ${transcript_worktree[${candidate#* }]} == $worktree ]] &&
