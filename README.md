@@ -36,7 +36,7 @@ claude-sessions iterm [claude]   # resume the conversations under the current di
 Install it once per user, from the installed plugin (it keeps working after plugin updates):
 
 ```bash
-bash "$(ls -td ~/.claude/plugins/cache/agilogy-claude-skills/tasks/*/ | head -1)bin/install-claude-sessions" [<dir>]
+bash "$(jq -r '.plugins["tasks@agilogy-claude-skills"][0].installPath' ~/.claude/plugins/installed_plugins.json)/bin/install-claude-sessions" [<dir>]
 ```
 
 `<dir>` defaults to `~/.local/bin`, which must be on your `PATH`. Needs macOS, `zsh`, `jq` and `git`;
