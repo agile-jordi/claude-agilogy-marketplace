@@ -1,8 +1,8 @@
 {
   "name": "agilogy-claude-skills",
-  "description": "Jordi Pradel's Claude Code skills, hooks and agents",
+  "description": "Agilogy's Claude Code plugins",
   "owner": {
-    "name": "Jordi Pradel"
+    "name": "Agilogy"
   },
   "plugins": [
     {

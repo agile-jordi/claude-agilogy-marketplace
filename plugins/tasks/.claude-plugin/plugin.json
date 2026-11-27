@@ -2,7 +2,7 @@
   "name": "tasks",
   "version": "0.2.0",
   "description": "Per-session pending list with a side panel (/tasks) and closing and archiving conversations (/session)",
-  "author": { "name": "Jordi Pradel" },
+  "author": { "name": "Agilogy" },
   "types": "./types/index.d.ts",
   "hooks": "./hooks/lifecycle.json"
 }
