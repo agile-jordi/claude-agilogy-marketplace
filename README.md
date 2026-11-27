@@ -47,3 +47,7 @@ plugins/<name>/hooks/*.json (+ scripts)
 ```
 
 Validate after any change with `claude plugin validate .`
+
+## License
+
+[MIT](LICENSE), © Agilogy.
