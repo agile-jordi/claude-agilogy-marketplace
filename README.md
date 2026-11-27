@@ -24,8 +24,6 @@ Plugin skills are invoked with the plugin name as prefix, e.g. `/tasks:tasks`, `
 - `bash`, `git`, `jq` and `python3`.
 - `CLAUDE_TASKS_REVIEW_EVERY`: prompts between automatic reviews (default 5).
 
-The tasks panel titles are in Catalan; Claude still replies in the language you write in.
-
 ## Layout
 
 ```

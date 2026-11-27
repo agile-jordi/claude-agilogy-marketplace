@@ -48,9 +48,9 @@ test('/tasks show opens a titled pane per section, each listing its tasks', asyn
 
   expect(ran.text).toBe('Tasks panel shown.')
   expect(opened).toEqual([
-    'tasks-archived: Arxivades (0)',
-    'tasks-closed: Tancades (1)',
-    'tasks: Obertes (2)',
+    'tasks-archived: Archived (0)',
+    'tasks-closed: Closed (1)',
+    'tasks: Open (2)',
   ])
   for (const surface of ['terminal', 'desktop'] as const) {
     const open = await $.ui.mount({ ...pane('tasks'), surface })
@@ -65,7 +65,7 @@ test('/tasks show opens a titled pane per section, each listing its tasks', asyn
     await closed.unmount()
 
     const archived = await $.ui.mount({ ...pane('tasks-archived'), surface })
-    expect((await archived.find({ type: 'Text' }))?.text).toBe('Cap tasca arxivada.')
+    expect((await archived.find({ type: 'Text' }))?.text).toBe('No archived tasks.')
     await archived.unmount()
   }
 })

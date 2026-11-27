@@ -6,9 +6,9 @@ import type { Panel, Section } from '../types'
 // One pane per section: with several panes open the engine draws them as tabs, in the order they were opened,
 // and shows the one opened last. The open tasks come last so that theirs is the tab shown.
 const PANES: readonly { id: string; section: Section; title: string; empty: string }[] = [
-  { id: 'tasks-archived', section: 'archived', title: 'Arxivades', empty: 'Cap tasca arxivada.' },
-  { id: 'tasks-closed', section: 'closed', title: 'Tancades', empty: 'Cap tasca tancada.' },
-  { id: 'tasks', section: 'open', title: 'Obertes', empty: 'Cap tasca oberta.' },
+  { id: 'tasks-archived', section: 'archived', title: 'Archived', empty: 'No archived tasks.' },
+  { id: 'tasks-closed', section: 'closed', title: 'Closed', empty: 'No closed tasks.' },
+  { id: 'tasks', section: 'open', title: 'Open', empty: 'No open tasks.' },
 ]
 const panel = atom(
   { plugin: 'tasks', key: 'panel' } as const,

@@ -97,7 +97,7 @@ document)
   ;;
 delegate)
   [ -n "${3:-}" ] || { echo "session required" >&2; exit 1; }
-  mark "${2:-}" '>' '🗃️' "→ sessió $3"
+  mark "${2:-}" '>' '🗃️' "→ session $3"
   ;;
 archive-closed)
   file=$(list_file)

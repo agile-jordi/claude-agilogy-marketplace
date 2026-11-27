@@ -1,6 +1,6 @@
 ---
 name: session
-description: "/session [verbose]: recap, and a silent /tasks review. /session close: check nothing is pending, archive the conversation (hidden from /resume), exit. /session close!: same, no check. /session open [term]: reopen one. Triggers: tanca/reobre la conversa."
+description: "/session [verbose]: recap, and a silent /tasks review. /session close: check nothing is pending, archive the conversation (hidden from /resume), exit. /session close!: same, no check. /session open [term]: reopen one. Triggers: close or reopen the conversation."
 ---
 
 # /session [verbose | close | close! | open]
@@ -31,7 +31,7 @@ With `close!`, skip steps 1–2.
 
       ╭────────────────────────────────────────────╮
       │                                            │
-      │   📦 Conversa arxivada                     │
+      │   📦 Conversation archived                 │
       │   <one-line summary from step 3>           │
       │                                            │
       ╰────────────────────────────────────────────╯
