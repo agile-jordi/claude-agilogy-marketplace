@@ -60,7 +60,7 @@ export const register: Register = on => {
 
   on('command.run', { command: 'tasks' }, async ($, e, next) => {
     const action = e.args.trim()
-    if (action === 'show') {
+    if (action === 'show' || action === '') {
       await $.store.set(await shownKey($), true)
       await show($)
 

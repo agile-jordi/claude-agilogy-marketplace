@@ -1,15 +1,17 @@
 #!/bin/bash
 # pending.sh list [all] | add <claude|user> <id> <description> | uncommitted <id> | done <id> | drop <id> [reason]
 #            document <id> <doc> | delegate <id> <session> | archive-closed | panel
-#            hook | archive <id> <dir> | restore <id> <dir>                   (session hooks and scripts)
+#            hook | review-due | archive <id> <dir> | restore <id> <dir>      (session hooks and scripts)
 # Marks: [ ] pending, [/] work done but not yet in a merge request, [x] done, [-] won't do,
 # [>] moved to a document or delegated to a session. [ ] and [/] are open: listed first, never archived.
 # uncommitted stamps the item with ✔️ <date>; closing an item stamps it with 🗃️ <date>.
-# archive-closed: moves the non-open items to the archived section, prints their ids and the non-archived list.
+# archive-closed: moves the non-open items to the archived section and prints their ids.
 # panel: what the tasks panel (the plugin's hooks/register.tsx) draws, a line per item:
 # "<open|closed|archived><TAB><mark> <owner> <id><TAB><description><TAB><note>", the note being what follows the
 # ➕ date but the ✔️ stamp (a drop's reason, a document or session, the 🗃️ date).
 # hook: SessionStart hook (resume/compact), puts this session's non-archived list back into context.
+# review-due: UserPromptSubmit hook, counts this session's prompts and, every $CLAUDE_TASKS_REVIEW_EVERY (default 5),
+# tells Claude to run a review in that turn.
 # archive: archives the closed items of a session's pending list and moves the list to <dir>/<id>.pending.md.
 # restore: moves <dir>/<id>.pending.md back as that session's pending list.
 set -u
@@ -100,8 +102,7 @@ delegate)
 archive-closed)
   file=$(list_file)
   ids=$(archive_closed "$file" | sed 's/^[^`]*\(`[^`]*`\) — .*/\1/' | paste -sd, - | sed 's/,/, /g')
-  printf '%s\n\n' "${ids:+Archived: }${ids:-No closed tasks to archive.}"
-  show_list "$file"
+  echo "${ids:+Archived: }${ids:-No closed tasks to archive.}"
   ;;
 panel)
   file=$(list_file) tab=$'\t'
@@ -120,9 +121,22 @@ hook)
   ;;
 archive)
   file="$pending_dir/$2.md"
+  rm -f -- "$pending_dir/$2.turns"
   [ -f "$file" ] || exit 0
   archive_closed "$file" > /dev/null
   if [ -s "$file" ]; then mv -- "$file" "$3/$2.pending.md"; else rm -f -- "$file"; fi
+  ;;
+review-due)
+  id=$(jq -r .session_id)
+  every=${CLAUDE_TASKS_REVIEW_EVERY:-5}
+  [[ "$every" =~ ^[1-9][0-9]*$ ]] || every=5
+  counter="$pending_dir/$id.turns"
+  mkdir -p "$pending_dir"
+  n=$(( $(cat "$counter" 2>/dev/null || echo 0) + 1 ))
+  echo "$n" > "$counter"
+  if [ $((n % every)) -eq 0 ]; then
+    echo 'In this turn, also run `/tasks review` (via the Skill tool, skill `tasks`). It replies nothing.'
+  fi
   ;;
 restore)
   [ -f "$3/$2.pending.md" ] || exit 0

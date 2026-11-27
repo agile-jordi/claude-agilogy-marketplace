@@ -69,3 +69,27 @@ test('/tasks show opens a titled pane per section, each listing its tasks', asyn
     await archived.unmount()
   }
 })
+
+test('/tasks with no arguments opens the panel too', async ($, on) => {
+  mock.store(on)
+  const opened: string[] = []
+  on('session.id', () => ({ value: 's1' }))
+  on('process.run', () => ({
+    value: { exitCode: 0, stdout: '', stderr: '', isStdoutTruncated: false, isStderrTruncated: false },
+  }))
+  on('ui.open', (_, e) => {
+    opened.push(e.id)
+
+    return { value: { isPlaced: true } }
+  })
+
+  const ran = await $.command.run({
+    command: 'tasks',
+    args: '',
+    origin: { kind: 'composer' },
+    presentation: { isFullscreen: true, columns: 160 },
+  })
+
+  expect(ran.text).toBe('Tasks panel shown.')
+  expect(opened).toEqual(['tasks-archived', 'tasks-closed', 'tasks'])
+})

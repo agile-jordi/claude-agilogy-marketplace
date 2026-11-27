@@ -1,13 +1,11 @@
 ---
 name: tasks
-description: "This session's pending list: show it (all: with the archived), add, mark the work done but not yet in a merge request, tick (done), drop, move to a repo document, delegate to another session, archive the closed items, review for missing open topics, show or hide its side panel."
-argument-hint: "[all | add <id> <description> | uncommitted <id> | done <id> | drop <id> [reason] | document <id> <doc> | delegate <id> [<session>] | archive | review | show | hide]"
+description: "This session's pending list: add, mark the work done but not yet in a merge request, tick (done), drop, move to a repo document, delegate to another session, archive the closed items, review (add missing open topics, close resolved ones), show or hide its side panel."
+argument-hint: "[add <id> <description> | uncommitted <id> | done <id> | drop <id> [reason] | document <id> <doc> | delegate <id> [<session>] | archive | review | show | hide]"
 ---
 
-Script: `${CLAUDE_SKILL_DIR}/pending.sh`. Reply with its output, as is, keeping its order and blank lines (open items — `[ ]` pending and `[/]` done but not yet in a merge request —, a blank line, closed items). Arguments: `$ARGUMENTS`
+Script: `${CLAUDE_SKILL_DIR}/pending.sh`. Except for `review`, reply with its output, as is: one line. Never print the list in the reply: the user sees it with `/tasks show`. Arguments: `$ARGUMENTS`
 
-- No argument → `pending.sh list`.
-- `all` → `pending.sh list all`.
 - `add <id> <description>` → `pending.sh add <owner> <id> "<description>"`. Owner: `claude` if Claude has to do it, `user` if the user has to (review, commit, decide, test). Missing id or description, or the script rejects the id → ask.
 - `uncommitted <id>` → `pending.sh uncommitted <id>`: the work is done but is not yet in a merge request: not committed, not pushed, or pushed with no request open. The item shows as `[/]` and stays open (listed with the pending ones, never archived).
 - `done <id>` → `pending.sh done <id>`.
@@ -28,12 +26,19 @@ Script: `${CLAUDE_SKILL_DIR}/pending.sh`. Reply with its output, as is, keeping 
      - no need to report back to the sender.
   3. `pending.sh delegate <id> <session>`.
   4. Do not follow the session up: no idle notice, no further messages.
-- `archive` → `pending.sh archive-closed` (prints the archived ids in one line, then the non-archived list).
-- `show` | `hide` → the tasks panel's: typed as `/tasks show` or `/tasks hide`, the mod (`hooks/register.tsx` of this plugin) answers before this skill runs. If you got here with one of them, the user did not type it or the mod is not loaded: say so and ask them to type it.
+- `archive` → `pending.sh archive-closed` (prints the archived ids in one line).
+- No argument, `show` | `hide` → the tasks panel's: typed as `/tasks`, `/tasks show` or `/tasks hide`, the mod (`hooks/register.tsx` of this plugin) answers before this skill runs. If you got here with one of them, the user did not type it or the mod is not loaded: say so and ask them to type it.
 - `review` → look for open topics missing from the list:
-  - deferred tasks, unanswered questions, unfinished requests, pending decisions in this conversation, only since the previous `review` (from the start if none);
+  - in this conversation, only since the previous `review` (from the start if none):
+    - owner `user`: questions Claude asked or offers it made, in any wording, that the user neither answered nor declined; things only the user can do that Claude asked for (review a merge request, approve a commit, merge, run a command, test by hand, provide data);
+    - owner `claude`: user questions left unanswered; user requests done in part or not at all; anything that failed, was skipped, was denied or was left unverified, unless Claude dropped it on purpose and said so; problems Claude found and reported, neither fixed nor dismissed by the user; implemented work not yet reviewed against the request; anything started and not finished: a background agent or task still running, a plan halfway, a wait on CI or on someone, a temporary file, branch, worktree or setting to clean up;
+    - either owner: anything the user or Claude postponed; the owner is whoever picks it up;
+    - skip what the user dismissed, and trivia;
   - uncommitted changes in any repo/worktree touched in this conversation;
+  - commits not pushed to their remote branch in those repos, the default branch included;
   - branches/worktrees worked on here that haven't landed on the repo's default branch, `main` or `master` — as the same commits, rebased, or squashed: with an open merge request, its merge task; with none, the `[/]` task of the work.
   The git checks always cover the current state, not just what changed since the previous `review`.
-  Add each with `pending.sh add` and a new short id. Then `pending.sh list`, appending ` 🆕` to the new items in the reply.
+  Add each with `pending.sh add` and a new short id.
+  Then go through every open item (`[ ]` and `[/]`): if the conversation or the git state shows it resolved, `pending.sh done <id>`; if the user abandoned it, `pending.sh drop <id> "<reason>"`.
+  Reply nothing about the review, not even a summary: the user sees the list with `/tasks show`. If the review is all the turn does, end it with no text.
 - Anything else → show the usage in the argument hint.

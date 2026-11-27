@@ -8,7 +8,7 @@ Marketplace muntat sense supervisió la nit del 26/11/2026 i reduït al plugin `
       (`LICENSE` a l'arrel o `license` a cada `plugin.json`).
 - [ ] **Nom del marketplace**: `agilogy-claude-skills` (s'instal·la com a `tasks@agilogy-claude-skills`).
       Canvia'l a `.claude-plugin/marketplace.json` si en vols un altre.
-- [ ] **Autor**: `Jordi Pradel` a `plugin.json`. Cap email.
+- [ ] **Autor**: `Agilogy` a `plugin.json` i com a `owner` del marketplace. Cap email.
 - [ ] No he fet `git init` ni cap commit.
 
 ## Estructura
@@ -28,8 +28,8 @@ Marketplace muntat sense supervisió la nit del 26/11/2026 i reduït al plugin `
 - `~/.claude/skills/<x>/...` → `${CLAUDE_SKILL_DIR}/...` als SKILL.md i `$(dirname "$0")/../<x>/` entre scripts.
 - **Hooks reconstruïts.** No he pogut llegir el teu `~/.claude/settings.json`, així que els he deduït dels
   comentaris dels scripts. Cal provar-los:
-  - `tasks/hooks/lifecycle.json`: SessionStart `resume|compact` → `pending.sh hook`; SessionStart →
-    `archive-session.sh sweep`; SessionEnd → `archive-session.sh`; Stop → `exit-after-turn.sh`.
+  - `tasks/hooks/lifecycle.json`: SessionStart → `cat hooks/keep-the-list.md` (afegit el 27/11: la instrucció de portar la llista, abans al teu CLAUDE.md); SessionStart `resume|compact` → `pending.sh hook`; SessionStart →
+    `archive-session.sh sweep`; UserPromptSubmit → `pending.sh review-due` (afegit el 27/11); SessionEnd → `archive-session.sh`; Stop → `exit-after-turn.sh`.
   - ⚠️ Quan instal·lis el plugin, **treu els hooks equivalents del teu `settings.json`**, o s'executaran dos cops.
 - **Mod de `tasks`**: només he canviat el camí a `skills/tasks/pending.sh`. Els hooks d'ordres van a
   `hooks/lifecycle.json`, declarat a `plugin.json`, i `hooks/hooks.json` es queda amb els mòduls.
