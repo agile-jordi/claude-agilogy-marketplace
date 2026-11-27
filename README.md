@@ -17,7 +17,7 @@ Plugin skills are invoked with the plugin name as prefix, e.g. `/tasks:tasks`, `
 
 | Plugin | What it gives you |
 |---|---|
-| `tasks` | `/tasks`: a per-session pending list with a side panel (a Claude Code mod); `/session`: recap, close and archive conversations so they leave `/resume`, reopen them. Hooks: tell Claude at session start to keep the list as topics come up, restore the list on resume/compact, run a silent `/tasks review` every few prompts, archive closed or empty sessions, exit after `/session close`. `claude-sessions`, a terminal command: tables of your conversations by repository, worktree and branch, with their git state, and resuming them in iTerm2 tabs. |
+| `tasks` | A per-session pending list: `/tasks:tasks-add`, `-uncommitted`, `-done`, `-drop`, `-document`, `-delegate`, `-archive`, `-review`, and `/tasks:tasks-show` / `-hide` for its side panel (a Claude Code mod); `/session`: recap, close and archive conversations so they leave `/resume`, reopen them. Hooks: tell Claude at session start to keep the list as topics come up, restore the list on resume/compact, run a silent `/tasks:tasks-review` every few prompts, archive closed or empty sessions, exit after `/session close`. `claude-sessions`, a terminal command: tables of your conversations by repository, worktree and branch, with their git state, and resuming them in iTerm2 tabs. |
 
 ## Requirements
 

@@ -4,7 +4,7 @@
 # SessionStart hook (arg "sweep"): archive every session that is no longer running and is queued or unprompted
 # (e.g. its terminal was closed without the SessionEnd hook running, or a transcript no process ever owned).
 # Archiving moves the transcript (and its subagent folder) out of ~/.claude/projects so /resume no longer lists it,
-# and its pending list next to it, closed items archived (see tasks/pending.sh).
+# and its pending list next to it, closed items archived (see bin/pending.sh).
 set -u
 queue_dir="$HOME/.claude/archive-queue"
 archive_dir="$HOME/.claude/archived-sessions"
@@ -26,7 +26,7 @@ archive() { # id transcript
     [ -d "${transcript%.jsonl}" ] && mv -- "${transcript%.jsonl}" "$dest/"
     printf '%s\t%s\t%s\t%s\n' "$(date +%F)" "$project_dir" "$id" "$(head -1 "$queue")" >> "$archive_dir/index.tsv"
   fi
-  bash "$(dirname "$0")/../tasks/pending.sh" archive "$id" "$dest"
+  bash "$(dirname "$0")/../../bin/pending.sh" archive "$id" "$dest"
   rm -f "$queue"
 }
 

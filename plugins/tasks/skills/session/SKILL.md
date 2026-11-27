@@ -1,6 +1,6 @@
 ---
 name: session
-description: "/session [verbose]: recap, and a silent /tasks review. /session close: check nothing is pending, archive the conversation (hidden from /resume), exit. /session close!: same, no check. /session open [term]: reopen one. Triggers: close or reopen the conversation."
+description: "/session [verbose]: recap, and a silent /tasks:tasks-review. /session close: check nothing is pending, archive the conversation (hidden from /resume), exit. /session close!: same, no check. /session open [term]: reopen one. Triggers: close or reopen the conversation."
 ---
 
 # /session [verbose | close | close! | open]
@@ -9,7 +9,7 @@ Script: `${CLAUDE_SKILL_DIR}/session.sh`.
 
 ## (no argument) | verbose
 
-1. Run `/tasks review` (via the Skill tool, skill `tasks`). It replies nothing.
+1. Run `/tasks:tasks-review` (via the Skill tool, skill `tasks:tasks-review`). It replies nothing.
 2. Reply in the conversation's language with only the recap: what was done in this conversation, at most
    3 lines. With `verbose`, a full recap with no line limit.
 
@@ -18,8 +18,8 @@ Script: `${CLAUDE_SKILL_DIR}/session.sh`.
 Closes this conversation: it's archived, no longer shows in `/resume`, and the session exits.
 With `close!`, skip steps 1–2.
 
-1. Run `/tasks review` (via the Skill tool, skill `tasks`). It replies nothing.
-2. `${CLAUDE_SKILL_DIR}/../tasks/pending.sh list` shows open items (`[ ]` or `[/]`) → `AskUserQuestion`, naming
+1. Run `/tasks:tasks-review` (via the Skill tool, skill `tasks:tasks-review`). It replies nothing.
+2. `${CLAUDE_SKILL_DIR}/../../bin/pending.sh list` shows open items (`[ ]` or `[/]`) → `AskUserQuestion`, naming
    them: close anyway, or keep open.
 3. Run `session.sh close "<one-line summary, conversation's language>"`.
 4. Reply with only this box, in a code block, in the conversation's language, with a blank line above

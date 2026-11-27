@@ -6,7 +6,7 @@
       },
       {
         "matcher": "resume|compact",
-        "hooks": [{ "type": "command", "command": "bash \"${CLAUDE_PLUGIN_ROOT}/skills/tasks/pending.sh\" hook" }]
+        "hooks": [{ "type": "command", "command": "bash \"${CLAUDE_PLUGIN_ROOT}/bin/pending.sh\" hook" }]
       },
       {
         "hooks": [{ "type": "command", "command": "bash \"${CLAUDE_PLUGIN_ROOT}/skills/session/archive-session.sh\" sweep", "timeout": 60 }]
@@ -14,7 +14,7 @@
     ],
     "UserPromptSubmit": [
       {
-        "hooks": [{ "type": "command", "command": "bash \"${CLAUDE_PLUGIN_ROOT}/skills/tasks/pending.sh\" review-due" }]
+        "hooks": [{ "type": "command", "command": "bash \"${CLAUDE_PLUGIN_ROOT}/bin/pending.sh\" review-due" }]
       }
     ],
     "SessionEnd": [
