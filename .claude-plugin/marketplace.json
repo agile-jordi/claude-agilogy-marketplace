@@ -1,0 +1,14 @@
+{
+  "name": "agilogy-claude-skills",
+  "description": "Agilogy's Claude Code plugins",
+  "owner": {
+    "name": "Agilogy"
+  },
+  "plugins": [
+    {
+      "name": "tasks",
+      "source": "./plugins/tasks",
+      "description": "Per-session pending list with a side panel (/tasks) and closing and archiving conversations (/session)"
+    }
+  ]
+}
