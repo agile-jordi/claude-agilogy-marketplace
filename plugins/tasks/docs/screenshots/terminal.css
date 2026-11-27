@@ -1,0 +1,28 @@
+/* Simulated terminal screenshots of the README. render.py turns each page into a PNG. */
+html, body { margin: 0; background: transparent; }
+body { padding: 28px; display: inline-block; }
+.window {
+  background: #000; color: #d8d8d8; border-radius: 10px; overflow: hidden;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, .45), 0 0 0 1px #3a3a3a;
+  font: 13px/1.45 Menlo, monospace;
+}
+.bar { background: #262626; height: 28px; display: flex; align-items: center; padding: 0 12px; position: relative; }
+.bar i { width: 12px; height: 12px; border-radius: 50%; margin-right: 8px; display: inline-block; }
+.bar i:nth-child(1) { background: #ff5f57; } .bar i:nth-child(2) { background: #febc2e; } .bar i:nth-child(3) { background: #28c840; }
+.bar span { position: absolute; left: 0; right: 0; text-align: center; color: #9a9a9a; font: 12px -apple-system, sans-serif; }
+pre { margin: 0; padding: 12px 16px; font: inherit; white-space: pre; overflow: hidden; }
+.cols { display: flex; }
+.cols > pre:first-child { flex: none; }
+.pane { border-left: 1px solid #444; flex: 1; }
+.e { display: inline-block; width: 2ch; text-align: center; }
+.dim { color: #808080; } .b { font-weight: bold; color: #fff; }
+.you { background: #222; color: #e8e8e8; display: inline-block; width: 100%; }
+.ok { color: #4ec96b; } .txt { color: #fff; }
+.code { color: #a8b0ff; } .g { color: #3ccf5a; } .r { color: #ff5f6d; } .m { color: #d670d6; }
+.path { color: #5fa8ff; font-weight: bold; } .br { color: #3ccf5a; font-weight: bold; }
+.mode { color: #c792ea; } .gray { color: #444; } .cur { background: #d8d8d8; color: #000; }
+.tab { color: #808080; } .tab.on { color: #000; background: #d8d8d8; font-weight: bold; }
+.footer .rule { border-top: 1px solid #666; border-bottom: 1px solid #666; margin: 8px 16px 0; padding: 6px 0; }
+.footer .status { padding-top: 8px; }
+.sh { color: #5fa8ff; } .head { color: #fff; font-weight: bold; }
+.box { line-height: 1.12; padding-top: 0; padding-bottom: 0; }
