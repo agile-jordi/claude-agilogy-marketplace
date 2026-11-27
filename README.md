@@ -7,7 +7,7 @@ per-session pending list and closing and archiving conversations.
 
 ```bash
 claude plugin marketplace add agile-jordi/claude-agilogy-marketplace
-claude plugin install tasks@agilogy-claude-skills
+claude plugin install tasks@claude-agilogy-marketplace
 ```
 
 Inside a session, `/plugin marketplace add agile-jordi/claude-agilogy-marketplace` and `/plugin` do the same.
