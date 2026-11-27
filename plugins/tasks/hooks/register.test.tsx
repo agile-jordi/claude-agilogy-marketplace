@@ -15,7 +15,7 @@ const pane = (requestId: string) =>
     },
   }) as const
 
-test('/tasks show opens a titled pane per section, each listing its tasks', async ($, on) => {
+test('/tasks:tasks-show opens a titled pane per section, each listing its tasks', async ($, on) => {
   mock.store(on)
   const opened: string[] = []
   on('session.id', () => ({ value: 's1' }))
@@ -40,8 +40,8 @@ test('/tasks show opens a titled pane per section, each listing its tasks', asyn
   })
 
   const ran = await $.command.run({
-    command: 'tasks',
-    args: 'show',
+    command: 'tasks:tasks-show',
+    args: '',
     origin: { kind: 'composer' },
     presentation: { isFullscreen: true, columns: 160 },
   })
@@ -70,26 +70,23 @@ test('/tasks show opens a titled pane per section, each listing its tasks', asyn
   }
 })
 
-test('/tasks with no arguments opens the panel too', async ($, on) => {
+test('/tasks:tasks-hide closes the panes', async ($, on) => {
   mock.store(on)
-  const opened: string[] = []
+  const closed: string[] = []
   on('session.id', () => ({ value: 's1' }))
-  on('process.run', () => ({
-    value: { exitCode: 0, stdout: '', stderr: '', isStdoutTruncated: false, isStderrTruncated: false },
-  }))
-  on('ui.open', (_, e) => {
-    opened.push(e.id)
+  on('ui.close', (_, e) => {
+    closed.push(e.id)
 
-    return { value: { isPlaced: true } }
+    return { value: undefined }
   })
 
   const ran = await $.command.run({
-    command: 'tasks',
+    command: 'tasks:tasks-hide',
     args: '',
     origin: { kind: 'composer' },
     presentation: { isFullscreen: true, columns: 160 },
   })
 
-  expect(ran.text).toBe('Tasks panel shown.')
-  expect(opened).toEqual(['tasks-archived', 'tasks-closed', 'tasks'])
+  expect(ran.text).toBe('Tasks panel hidden.')
+  expect(closed).toEqual(['tasks-archived', 'tasks-closed', 'tasks'])
 })

@@ -22,7 +22,7 @@ const shownKey = async ($: EngineInterface) => `shown:${await $.session.id()}`
 // `pending.sh panel` prints one `<section>\t<head>\t<description>\t<note>` line per task.
 const refresh = async ($: EngineInterface): Promise<Panel> => {
   const { stdout } = await $.process.run(
-    [`${$.plugin.root}/skills/tasks/pending.sh`, 'panel'],
+    [`${$.plugin.root}/bin/pending.sh`, 'panel'],
     { env: { CLAUDE_CODE_SESSION_ID: await $.session.id() } },
   )
   const next: Panel = { open: [], closed: [], archived: [] }
@@ -58,21 +58,17 @@ export const register: Register = on => {
     return started
   })
 
-  on('command.run', { command: 'tasks' }, async ($, e, next) => {
-    const action = e.args.trim()
-    if (action === 'show' || action === '') {
-      await $.store.set(await shownKey($), true)
-      await show($)
+  on('command.run', { command: 'tasks:tasks-show' }, async $ => {
+    await $.store.set(await shownKey($), true)
+    await show($)
 
-      return { text: 'Tasks panel shown.' }
-    }
-    if (action === 'hide') {
-      await hide($)
+    return { text: 'Tasks panel shown.' }
+  })
 
-      return { text: 'Tasks panel hidden.' }
-    }
+  on('command.run', { command: 'tasks:tasks-hide' }, async $ => {
+    await hide($)
 
-    return next(e)
+    return { text: 'Tasks panel hidden.' }
   })
 
   // The person closing one tab closes the whole panel.

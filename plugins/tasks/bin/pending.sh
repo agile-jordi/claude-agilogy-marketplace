@@ -117,7 +117,7 @@ panel)
 hook)
   file="$pending_dir/$(jq -r .session_id).md"
   items=$(show_active "$file") || exit 0
-  printf 'Pending list of this session (tasks skill):\n\n%s\n' "$items"
+  printf 'Pending list of this session (tasks plugin):\n\n%s\n' "$items"
   ;;
 archive)
   file="$pending_dir/$2.md"
@@ -135,7 +135,7 @@ review-due)
   n=$(( $(cat "$counter" 2>/dev/null || echo 0) + 1 ))
   echo "$n" > "$counter"
   if [ $((n % every)) -eq 0 ]; then
-    echo 'In this turn, also run `/tasks review` (via the Skill tool, skill `tasks`). It replies nothing.'
+    echo 'In this turn, also run `/tasks:tasks-review` (via the Skill tool, skill `tasks:tasks-review`). It replies nothing.'
   fi
   ;;
 restore)

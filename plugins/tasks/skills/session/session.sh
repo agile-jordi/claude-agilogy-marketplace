@@ -27,7 +27,7 @@ open)
     mkdir -p "$dest"
     mv "$src" "$dest/"
     [ -d "${src%.jsonl}" ] && mv "${src%.jsonl}" "$dest/"
-    bash "$(dirname "$0")/../tasks/pending.sh" restore "$arg" "$(dirname "$src")"
+    bash "$(dirname "$0")/../../bin/pending.sh" restore "$arg" "$(dirname "$src")"
     echo "Restored $arg ($project_dir): resume it with /resume or claude -r $arg."
   else
     # Candidates: date, project dir, session id, summary
