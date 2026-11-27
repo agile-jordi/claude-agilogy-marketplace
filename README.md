@@ -6,11 +6,11 @@ per-session pending list and closing and archiving conversations.
 ## Install
 
 ```bash
-claude plugin marketplace add agile-jordi/claude-agilogy-marketplace
+claude plugin marketplace add agilogy/claude-agilogy-marketplace
 claude plugin install tasks@claude-agilogy-marketplace
 ```
 
-Inside a session, `/plugin marketplace add agile-jordi/claude-agilogy-marketplace` and `/plugin` do the same.
+Inside a session, `/plugin marketplace add agilogy/claude-agilogy-marketplace` and `/plugin` do the same.
 Plugin skills are invoked with the plugin name as prefix, e.g. `/tasks:tasks-show`, `/tasks:session`.
 
 ## Plugins
