@@ -1,7 +1,7 @@
 {
   "name": "tasks",
-  "version": "0.2.0",
-  "description": "Per-session pending list with a side panel (/tasks) and closing and archiving conversations (/session)",
+  "version": "0.3.0",
+  "description": "Per-session pending list with a side panel (/tasks), closing and archiving conversations (/session), and claude-sessions to list and resume conversations from the terminal",
   "author": { "name": "Agilogy" },
   "types": "./types/index.d.ts",
   "hooks": "./hooks/lifecycle.json"

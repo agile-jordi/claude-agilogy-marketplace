@@ -1,0 +1,17 @@
+#!/bin/bash
+# install-claude-sessions [<dir>]: puts claude-sessions in <dir> (default ~/.local/bin) as a script that runs
+# bin/claude-sessions of the most recently installed version of this plugin, so plugin updates reach it.
+# Run it from the installed plugin, not from a checkout of its repository.
+set -eu
+dir=${1:-$HOME/.local/bin}
+versions=$(cd "$(dirname "$0")/../.." && pwd -P)
+mkdir -p "$dir"
+cat > "$dir/claude-sessions" <<EOF
+#!/bin/bash
+latest=\$(ls -td "$versions"/*/ 2>/dev/null | head -1)
+[ -f "\${latest}bin/claude-sessions" ] || { echo "claude-sessions: the tasks plugin is not installed" >&2; exit 1; }
+exec zsh "\${latest}bin/claude-sessions" "\$@"
+EOF
+chmod 755 "$dir/claude-sessions"
+echo "Installed $dir/claude-sessions"
+case ":$PATH:" in *":$dir:"*) ;; *) echo "$dir is not on your PATH: add it" ;; esac

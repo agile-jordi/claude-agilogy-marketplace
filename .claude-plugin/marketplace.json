@@ -8,7 +8,7 @@
     {
       "name": "tasks",
       "source": "./plugins/tasks",
-      "description": "Per-session pending list with a side panel (/tasks) and closing and archiving conversations (/session)"
+      "description": "Per-session pending list with a side panel (/tasks), closing and archiving conversations (/session), and claude-sessions to list and resume conversations from the terminal"
     }
   ]
 }
